@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>טיימר פוקוס — למבחן</title>
+<style>
+:root{
+  --p:#2D6BE4;--pl:#EEF3FF;--pd:#1A4FB0;
+  --bg:#F4F6FB;--card:#fff;--bdr:#DDE2EE;
+  --tx:#111;--tx2:#555;--tx3:#999;
+  --r:14px;--rl:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+body{background:var(--bg);color:var(--tx);min-height:100vh;direction:rtl}
+
+/* SETUP */
+#setup{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem}
+#scard{background:var(--card);border-radius:var(--rl);border:1.5px solid var(--bdr);padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center}
+.ico{font-size:52px;margin-bottom:.4rem}
+#scard h1{font-size:23px;font-weight:800;color:var(--p);margin-bottom:.3rem}
+#scard p{font-size:14px;color:var(--tx2);margin-bottom:1.8rem;line-height:1.7}
+.sf{margin-bottom:1.1rem;text-align:right}
+.sf label{font-size:13px;color:var(--tx2);font-weight:700;display:block;margin-bottom:5px}
+.sf input{width:100%;padding:12px 14px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:16px;color:var(--tx);background:var(--card);direction:rtl;font-family:inherit}
+.sf input:focus{outline:none;border-color:var(--p)}
+#go-btn{width:100%;padding:15px;background:var(--p);color:#fff;border:none;border-radius:var(--r);font-size:18px;font-weight:800;cursor:pointer;margin-top:.3rem;font-family:inherit}
+#go-btn:hover{background:var(--pd)}
+
+/* APP */
+#app{display:none;max-width:660px;margin:0 auto;padding:1.2rem 1rem 3rem}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.hi{font-size:18px;font-weight:800;color:var(--tx)}.hi span{color:var(--p)}
+.stg-btn{background:none;border:1.5px solid var(--bdr);border-radius:var(--r);padding:6px 14px;font-size:13px;cursor:pointer;color:var(--tx2);font-family:inherit}
+
+/* NOW BOX */
+#now-box{border-radius:var(--rl);padding:14px 20px;margin-bottom:1rem;text-align:center;border:2.5px solid var(--p);background:var(--pl);transition:background .4s,border-color .4s}
+#now-box.brk{background:#E6FFFA;border-color:#0F766E}
+#now-lbl{font-size:12px;font-weight:800;color:var(--pd);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+#now-txt{font-size:19px;font-weight:700;color:var(--pd);line-height:1.4}
+#now-box.brk #now-lbl,#now-box.brk #now-txt{color:#0F766E}
+
+/* BIG TIMER */
+#tblock{background:var(--card);border-radius:var(--rl);border:1.5px solid var(--bdr);padding:2rem 1rem 1.5rem;margin-bottom:1rem;text-align:center;transition:background .4s,border-color .4s}
+#tblock.brk{background:#E6FFFA;border-color:#0F766E}
+#tblock.urg{background:#FFF7ED;border-color:#EA580C;animation:urg 1s infinite}
+@keyframes urg{0%,100%{box-shadow:0 0 0 0 rgba(234,88,12,.3)}50%{box-shadow:0 0 0 14px rgba(234,88,12,0)}}
+#mode-lbl{font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--tx3);text-transform:uppercase;margin-bottom:.4rem}
+#big-time{font-size:clamp(90px,24vw,150px);font-weight:900;line-height:1;color:var(--p);font-variant-numeric:tabular-nums;transition:color .4s;letter-spacing:-2px}
+#tblock.brk #big-time{color:#0F766E}
+#tblock.urg #big-time{color:#EA580C}
+#tbar-wrap{height:16px;background:#EEF0F5;border-radius:8px;margin:1rem auto 0;max-width:420px;overflow:hidden}
+#tbar{height:16px;border-radius:8px;background:var(--p);transition:width 1s linear,background .4s}
+#tblock.brk #tbar{background:#0F766E}
+#tblock.urg #tbar{background:#EA580C}
+.ctrl-row{display:flex;gap:10px;justify-content:center;margin-top:1.2rem;flex-wrap:wrap}
+button.ctrl{cursor:pointer;border:1.5px solid var(--bdr);background:transparent;border-radius:var(--r);padding:10px 22px;font-size:15px;color:var(--tx);font-family:inherit;font-weight:700}
+button.ctrl:hover{background:#f0f0f0}
+button.ctrl.main{background:var(--p);border-color:var(--p);color:#fff;font-size:19px;padding:13px 40px}
+button.ctrl.main:hover{background:var(--pd)}
+button.ctrl.brk-btn{background:#0F766E;border-color:#0F766E;color:#fff}
+
+/* GOAL */
+#goal-card{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px 18px;margin-bottom:1rem;display:flex;align-items:center;gap:14px}
+.goal-txt{min-width:120px}.goal-lbl{font-size:12px;color:var(--tx3);font-weight:700}
+.goal-num{font-size:18px;font-weight:800;color:var(--tx)}
+.gbar-wrap{flex:1;height:12px;background:#EEF0F5;border-radius:6px;overflow:hidden}
+#gbar{height:12px;border-radius:6px;background:var(--p);transition:width .5s}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.2rem}
+.sc{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--r);padding:12px 8px;text-align:center}
+.sv{font-size:24px;font-weight:900;color:var(--p)}.sl{font-size:11px;color:var(--tx3);margin-top:2px;font-weight:600}
+
+/* SUBJECT TABS */
+.sec-title{font-size:13px;font-weight:800;color:var(--tx2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.subj-tabs{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.stab{padding:8px 18px;border:1.5px solid var(--bdr);border-radius:20px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:var(--tx2);font-family:inherit;transition:all .2s}
+.stab:hover{border-color:var(--p);color:var(--p)}
+.stab.act{color:#fff;border-color:transparent}
+.stab[data-s="mech"].act{background:#2D6BE4}
+.stab[data-s="calc"].act{background:#7C3AED}
+
+/* TOPIC SELECT */
+.topic-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem}
+.tpc-btn{padding:10px 12px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;background:var(--card);color:var(--tx2);font-family:inherit;text-align:right;transition:all .2s;line-height:1.4}
+.tpc-btn:hover{border-color:var(--p);color:var(--p);background:var(--pl)}
+.tpc-btn.sel{border-color:var(--p);background:var(--pl);color:var(--pd)}
+.tpc-btn[data-s="calc"].sel{background:#F5F3FF;border-color:#7C3AED;color:#5B21B6}
+
+/* TASK TYPE */
+.task-types{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.ttype{padding:6px 14px;border:1.5px solid var(--bdr);border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--tx2);font-family:inherit}
+.ttype.sel{background:var(--pl);border-color:var(--p);color:var(--pd)}
+
+/* ADD TASK FORM */
+.tform{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--rl);padding:16px;margin-bottom:1rem}
+.tform input{width:100%;padding:11px 14px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:15px;color:var(--tx);background:var(--card);direction:rtl;font-family:inherit;margin-bottom:10px}
+.tform input:focus{outline:none;border-color:var(--p)}
+.form-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.form-row select{flex:1;min-width:120px;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:14px;color:var(--tx);background:var(--card);direction:rtl;font-family:inherit}
+.form-row select:focus{outline:none;border-color:var(--p)}
+#add-btn{width:100%;padding:11px;background:var(--p);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
+#add-btn:hover{background:var(--pd)}
+
+/* TASK LIST */
+.tlist{display:flex;flex-direction:column;gap:10px}
+.tc{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:border-color .2s,background .2s}
+.tc:hover{border-color:var(--p)}
+.tc.act-t{border-color:var(--p);background:var(--pl);border-width:2.5px}
+.tc.act-t.calc-t{border-color:#7C3AED;background:#F5F3FF}
+.tc.done-t{opacity:.38}
+.ttop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.tname{font-size:15px;font-weight:700;flex:1;color:var(--tx)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap}
+.bm{background:#EFF6FF;color:#1E40AF}
+.bc{background:#F5F3FF;color:#5B21B6}
+.btype{background:#FEF3C7;color:#92400E}
+.tprog{margin-bottom:8px}
+.plbl{font-size:12px;color:var(--tx3);font-weight:600;margin-bottom:4px}
+.pbar{height:6px;border-radius:3px;background:#EEF0F5}
+.pfill{height:6px;border-radius:3px;background:var(--p);transition:width .4s}
+.tc.act-t.calc-t .pfill{background:#7C3AED}
+.tact{display:flex;gap:8px}
+.tact button{font-size:13px;padding:6px 14px;border:1.5px solid var(--bdr);border-radius:var(--r);background:transparent;cursor:pointer;color:var(--tx2);font-family:inherit;font-weight:700}
+.tact button.db{border-color:var(--p);color:var(--p);background:var(--pl)}
+.tact button:hover{background:#f0f0f0}
+.empty{font-size:14px;color:var(--tx3);text-align:center;padding:2rem 0}
+
+/* CELEBRATE */
+#cel-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100}
+#cel-box{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:101;background:var(--card);border-radius:var(--rl);border:2px solid var(--p);padding:2.5rem 2rem;text-align:center;max-width:320px;width:92%}
+#ce{font-size:60px;margin-bottom:.5rem}
+#ct{font-size:22px;font-weight:800;color:var(--p);margin-bottom:.5rem}
+#cm{font-size:15px;color:var(--tx2);margin-bottom:1.4rem;line-height:1.7}
+#cc{width:100%;padding:13px;background:var(--p);color:#fff;border:none;border-radius:var(--r);font-size:16px;font-weight:800;cursor:pointer;font-family:inherit}
+#fw{display:none;position:fixed;inset:0;z-index:99;pointer-events:none;overflow:hidden}
+
+/* SETTINGS */
+#stpanel{display:none;position:fixed;inset:0;z-index:200}
+#stback{position:absolute;inset:0;background:rgba(0,0,0,.3)}
+#stdrawer{position:absolute;top:0;left:0;width:290px;height:100%;background:var(--card);padding:1.8rem 1.5rem;overflow-y:auto;direction:rtl}
+#stdrawer h2{font-size:17px;font-weight:800;margin-bottom:1.3rem}
+.srow{margin-bottom:1.1rem}
+.srow label{font-size:13px;color:var(--tx2);font-weight:700;display:block;margin-bottom:5px}
+.srow input,.srow select{width:100%;padding:9px 12px;border:1.5px solid var(--bdr);border-radius:var(--r);font-size:14px;color:var(--tx);background:var(--card);direction:rtl;font-family:inherit}
+#stsave{width:100%;padding:11px;background:var(--p);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:800;cursor:pointer;margin-top:.5rem;font-family:inherit}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup">
+  <div id="scard">
+    <div class="ico">🎯</div>
+    <h1>טיימר הפוקוס שלי</h1>
+    <p>כלי לימוד למבחן — מכניקה וחדו״א א<br>פשוט, ברור, בשבילך</p>
+    <div class="sf">
+      <label>מה השם שלך?</label>
+      <input id="s-name" type="text" placeholder="כתוב את שמך..." dir="rtl">
+    </div>
+    <div class="sf">
+      <label>כמה סשני פוקוס אתה רוצה לעשות היום?</label>
+      <input id="s-goal" type="number" min="1" max="20" value="6" dir="rtl">
+    </div>
+    <button id="go-btn" onclick="startApp()">🚀 בוא נתחיל ללמוד!</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="hi">שלום, <span id="uname"></span> 👋</div>
+    <button class="stg-btn" onclick="openSt()">⚙️ הגדרות</button>
+  </div>
+
+  <div id="now-box">
+    <div id="now-lbl">עכשיו אתה צריך לעשות:</div>
+    <div id="now-txt">בחר נושא לימוד ומשימה למטה, ואז לחץ התחל ▶</div>
+  </div>
+
+  <div id="tblock">
+    <div id="mode-lbl">⏱ פוקוס</div>
+    <div id="big-time">25:00</div>
+    <div id="tbar-wrap"><div id="tbar" style="width:100%"></div></div>
+    <div class="ctrl-row">
+      <button class="ctrl" onclick="resetTimer()">↺ איפוס</button>
+      <button class="ctrl main" id="start-btn" onclick="toggleTimer()">▶ התחל</button>
+      <button class="ctrl brk-btn" onclick="setMode('short')">☕ הפסקה</button>
+    </div>
+  </div>
+
+  <div id="goal-card">
+    <div class="goal-txt">
+      <div class="goal-lbl">יעד היום</div>
+      <div class="goal-num"><span id="gdone">0</span> / <span id="gtotal">6</span> 🍅</div>
+    </div>
+    <div class="gbar-wrap"><div id="gbar" style="width:0%"></div></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="sc"><div class="sv" id="st-s">0</div><div class="sl">סשנים היום</div></div>
+    <div class="sc"><div class="sv" id="st-f">0</div><div class="sl">דקות פוקוס</div></div>
+    <div class="sc"><div class="sv" id="st-t">0</div><div class="sl">משימות הושלמו</div></div>
+  </div>
+
+  <!-- ADD TASK -->
+  <div class="sec-title">הוסף משימת לימוד</div>
+
+  <div class="subj-tabs">
+    <button class="stab act" data-s="mech" onclick="pickSubj('mech',this)">⚙️ מכניקה</button>
+    <button class="stab" data-s="calc" onclick="pickSubj('calc',this)">∫ חדו״א א</button>
+  </div>
+
+  <div class="topic-grid" id="topic-grid"></div>
+
+  <div class="task-types" id="task-types">
+    <button class="ttype sel" data-v="theory" onclick="pickType(this)">📖 תיאוריה / הגדרות</button>
+    <button class="ttype" data-v="examples" onclick="pickType(this)">✏️ דוגמאות פתורות</button>
+    <button class="ttype" data-v="practice" onclick="pickType(this)">💪 תרגול שאלות</button>
+    <button class="ttype" data-v="summary" onclick="pickType(this)">📝 סיכום</button>
+    <button class="ttype" data-v="review" onclick="pickType(this)">🔄 חזרה</button>
+  </div>
+
+  <div class="tform">
+    <input id="tinput" type="text" placeholder="תאר בקצרה מה תלמד... (אפשר להשאיר ריק)" dir="rtl">
+    <div class="form-row">
+      <select id="tpom" dir="rtl">
+        <option value="1">1 🍅 (25 דקות)</option>
+        <option value="2" selected>2 🍅 (50 דקות)</option>
+        <option value="3">3 🍅 (75 דקות)</option>
+        <option value="4">4 🍅 (100 דקות)</option>
+      </select>
+      <select id="tpri" dir="rtl">
+        <option value="h">🔴 דחוף — חלש בזה</option>
+        <option value="m" selected>🟡 רגיל</option>
+        <option value="l">🟢 כבר יודע קצת</option>
+      </select>
+    </div>
+    <button id="add-btn" onclick="addTask()">+ הוסף משימת לימוד</button>
+  </div>
+
+  <div class="sec-title">משימות הלימוד שלי</div>
+  <div class="tlist" id="tlist"></div>
+</div>
+
+<!-- CELEBRATE -->
+<div id="cel-ov" onclick="closeCel()"></div>
+<div id="cel-box">
+  <div id="ce"></div>
+  <div id="ct"></div>
+  <div id="cm"></div>
+  <button id="cc" onclick="closeCel()">יאללה, ממשיכים! 💪</button>
+</div>
+<div id="fw"></div>
+
+<!-- SETTINGS -->
+<div id="stpanel">
+  <div id="stback" onclick="closeSt()"></div>
+  <div id="stdrawer">
+    <h2>⚙️ הגדרות</h2>
+    <div class="srow"><label>שם</label><input id="st-name" dir="rtl"></div>
+    <div class="srow"><label>יעד יומי (סשנים)</label><input id="st-goal" type="number" min="1" max="20" dir="rtl"></div>
+    <div class="srow"><label>משך פוקוס (דקות)</label><input id="st-dur" type="number" min="5" max="60" value="25" dir="rtl"></div>
+    <div class="srow"><label>צליל סיום</label>
+      <select id="st-sound" dir="rtl">
+        <option value="bell">פעמון</option>
+        <option value="ding">דינג</option>
+        <option value="none">ללא</option>
+      </select>
+    </div>
+    <button id="stsave" onclick="saveSt()">✅ שמור</button>
+  </div>
+</div>
+
+<script>
+const SUBJECTS={
+  mech:{
+    label:'מכניקה',color:'#2D6BE4',light:'#EEF3FF',dark:'#1A4FB0',
+    topics:[
+      {v:'kin',e:'🏃',l:'קינמטיקה',s:'תנועה, מהירות, תאוצה'},
+      {v:'dyn',e:'⚡',l:'דינמיקה',s:'כוחות, חוקי ניוטון'},
+      {v:'ene',e:'🔋',l:'אנרגיה ועבודה',s:'שימור אנרגיה'},
+      {v:'mom',e:'💥',l:'תנע',s:'קצב שינוי תנע, שימור תנע'},
+    ]
+  },
+  calc:{
+    label:'חדו״א א',color:'#7C3AED',light:'#F5F3FF',dark:'#5B21B6',
+    topics:[
+      {v:'lim',e:'→',l:'גבולות ורציפות',s:'חישוב גבולות, רציפות'},
+      {v:'der',e:'d/dx',l:'נגזרות',s:'כללי גזירה, נגזרות גבוהות'},
+      {v:'int',e:'∫',l:'אינטגרלים',s:'אינטגרל מסויים ובלתי מסויים'},
+      {v:'ser',e:'Σ',l:'סדרות וטורים',s:'התכנסות, בחינות התכנסות'},
+    ]
+  }
+};
+
+const TYPES={theory:'📖 תיאוריה',examples:'✏️ דוגמאות',practice:'💪 תרגול',summary:'📝 סיכום',review:'🔄 חזרה'};
+
+const ENC=[
+  {e:'🎉',t:'כל הכבוד!',m:'סיימת את המשימה! אתה עושה עבודה מדהימה לקראת המבחן.'},
+  {e:'🚀',t:'יש לך!',m:'עוד נושא מאחוריך. אתה מתקדם יפה מאוד!'},
+  {e:'⭐',t:'נהדר!',m:'מיקוד מושלם. ככה עוברים מבחנים!'},
+  {e:'💪',t:'כוח!',m:'זה לא היה פשוט אבל עשית את זה. מגניב!'},
+  {e:'🏆',t:'אלוף!',m:'עבודה מקצועית. המבחן לא ידע מה פגע בו!'},
+  {e:'🌟',t:'מדהים!',m:'עוד משימה הושלמה. אתה בדרך הנכונה!'}
+];
+
+let cfg={name:'',goal:6,dur:25,sound:'bell'};
+let mode='focus',total=25*60,rem=25*60,running=false,iv=null;
+let activeTask=null,sessions=0,focusMins=0,tasksDone=0;
+let tasks=[],nid=1;
+let curSubj='mech',curTopic=null,curType='theory';
+
+function startApp(){
+  cfg.name=document.getElementById('s-name').value.trim()||'חבר';
+  cfg.goal=parseInt(document.getElementById('s-goal').value)||6;
+  total=cfg.dur*60;rem=total;
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('uname').textContent=cfg.name;
+  document.getElementById('gtotal').textContent=cfg.goal;
+  renderTopics();updateDisplay();updateNow();renderTasks();
+}
+
+function renderTopics(){
+  const s=SUBJECTS[curSubj];
+  const g=document.getElementById('topic-grid');
+  g.innerHTML=s.topics.map(t=>`
+    <button class="tpc-btn${curTopic===t.v?' sel':''}" data-s="${curSubj}" data-v="${t.v}" onclick="pickTopic('${t.v}',this)">
+      <span style="font-size:16px">${t.e}</span> ${t.l}<br>
+      <span style="font-size:11px;color:var(--tx3);font-weight:500">${t.s}</span>
+    </button>`).join('');
+}
+
+function pickSubj(s,el){
+  curSubj=s;curTopic=null;
+  document.querySelectorAll('.stab').forEach(x=>x.classList.remove('act'));
+  el.classList.add('act');
+  renderTopics();
+  const clr=SUBJECTS[s].color;
+  document.getElementById('add-btn').style.background=clr;
+}
+
+function pickTopic(v,el){
+  curTopic=curTopic===v?null:v;
+  document.querySelectorAll('.tpc-btn').forEach(x=>x.classList.remove('sel'));
+  if(curTopic)el.classList.add('sel');
+}
+
+function pickType(el){
+  curType=el.dataset.v;
+  document.querySelectorAll('.ttype').forEach(x=>x.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function buildTaskName(){
+  const s=SUBJECTS[curSubj];
+  const t=s.topics.find(x=>x.v===curTopic);
+  const custom=document.getElementById('tinput').value.trim();
+  if(custom)return custom;
+  if(t)return TYPES[curType].replace(/[^\u0000-\u007E\u05D0-\u05EA ]/g,'').trim()+' — '+t.l;
+  return TYPES[curType].replace(/[^\u0000-\u007E\u05D0-\u05EA ]/g,'').trim()+' — '+s.label;
+}
+
+function addTask(){
+  const name=buildTaskName();
+  tasks.push({
+    id:nid++,name,
+    subj:curSubj,
+    topic:curTopic,
+    type:curType,
+    pri:document.getElementById('tpri').value,
+    goal:parseInt(document.getElementById('tpom').value),
+    poms:0,done:false
+  });
+  document.getElementById('tinput').value='';
+  renderTasks();
+}
+
+function selectTask(id){if(running)return;activeTask=activeTask===id?null:id;renderTasks();updateNow();}
+function removeTask(id){tasks=tasks.filter(x=>x.id!==id);if(activeTask===id)activeTask=null;renderTasks();updateNow();}
+function markDone(id){
+  const t=tasks.find(x=>x.id===id);if(!t||t.done)return;
+  t.done=true;tasksDone++;
+  document.getElementById('st-t').textContent=tasksDone;
+  if(activeTask===id)activeTask=null;
+  renderTasks();celebrate();
+}
+
+function renderTasks(){
+  const list=document.getElementById('tlist');
+  if(!tasks.length){list.innerHTML='<div class="empty">הוסף משימת לימוד למעלה 👆</div>';return;}
+  const sorted=[...tasks].sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    return{h:0,m:1,l:2}[a.pri]-{h:0,m:1,l:2}[b.pri];
+  });
+  list.innerHTML=sorted.map(t=>{
+    const s=SUBJECTS[t.subj];
+    const top=s.topics.find(x=>x.v===t.topic);
+    const pct=Math.min(100,Math.round(t.poms/t.goal*100));
+    const isAct=t.id===activeTask;
+    const isCalc=t.subj==='calc';
+    return`<div class="tc${isAct?' act-t':''}${isCalc?' calc-t':''}${t.done?' done-t':''}" onclick="selectTask(${t.id})">
+      <div class="ttop">
+        <span class="tname">${isAct?'▶ ':''} ${t.name}</span>
+        <span class="badge ${isCalc?'bc':'bm'}">${isCalc?'∫ חדו״א':'⚙️ מכניקה'}</span>
+        ${top?`<span class="badge" style="background:#F0FDF4;color:#166534">${top.e} ${top.l}</span>`:''}
+        <span class="badge btype">${TYPES[t.type]}</span>
+      </div>
+      <div class="tprog">
+        <div class="plbl">${'🍅'.repeat(Math.min(t.poms,8))} ${t.poms}/${t.goal} סשנים${t.done?' ✅ הושלם!':''}</div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+      </div>
+      ${!t.done?`<div class="tact" onclick="event.stopPropagation()">
+        <button class="db" onclick="markDone(${t.id})">✅ סיימתי!</button>
+        <button onclick="removeTask(${t.id})">🗑 הסר</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+/* TIMER */
+function pad(n){return String(n).padStart(2,'0')}
+function updateDisplay(){
+  document.getElementById('big-time').textContent=pad(Math.floor(rem/60))+':'+pad(rem%60);
+  document.getElementById('tbar').style.width=(rem/total*100)+'%';
+  const tb=document.getElementById('tblock');
+  tb.className=mode!=='focus'?'brk':(rem<=120&&rem>0?'urg':'');
+  document.getElementById('mode-lbl').textContent=
+    mode==='focus'?'⏱ פוקוס — תשאר עם הנושא':
+    mode==='short'?'☕ הפסקה קצרה — קום, שתה מים':
+    '🛌 הפסקה ארוכה — נח טוב';
+  const nb=document.getElementById('now-box');
+  nb.className=mode!=='focus'?'brk':'';
+}
+
+function updateNow(){
+  const t=tasks.find(x=>x.id===activeTask);
+  const nb=document.getElementById('now-txt');
+  if(mode!=='focus'){nb.textContent=mode==='short'?'קום, שתה מים, נשום — מגיע לך ☕':'קח הפסקה טובה, את/ה עובד/ת קשה 😎';return;}
+  if(!activeTask){nb.textContent='בחר משימת לימוד מהרשימה למטה ולחץ התחל ▶';return;}
+  if(!running){nb.textContent=t?'לחץ התחל כדי להתחיל: '+t.name+' ▶':'לחץ התחל ▶';return;}
+  nb.textContent=t?'עובד על: '+t.name+' — אל תסתכל על הטלפון 📵':'פוקוס! אל תסיח את דעתך 💡';
+}
+
+function setMode(m2){
+  mode=m2;clearInterval(iv);running=false;
+  document.getElementById('start-btn').textContent='▶ התחל';
+  total=m2==='focus'?cfg.dur*60:m2==='short'?5*60:15*60;
+  rem=total;updateDisplay();updateNow();
+}
+
+function toggleTimer(){
+  if(running){
+    clearInterval(iv);running=false;
+    document.getElementById('start-btn').textContent='▶ המשך';
+    updateNow();
+  } else {
+    running=true;
+    document.getElementById('start-btn').textContent='⏸ השהה';
+    updateNow();
+    iv=setInterval(()=>{
+      rem--;updateDisplay();
+      if(rem<=0){
+        clearInterval(iv);running=false;
+        document.getElementById('start-btn').textContent='▶ התחל';
+        playSound();
+        if(mode==='focus'){
+          sessions++;focusMins+=cfg.dur;
+          document.getElementById('st-s').textContent=sessions;
+          document.getElementById('st-f').textContent=focusMins;
+          if(activeTask){const t=tasks.find(x=>x.id===activeTask);if(t&&!t.done){t.poms++;renderTasks();}}
+          updateGoal();
+        }
+        rem=0;updateDisplay();
+        if(mode==='focus')document.getElementById('now-txt').textContent='כל הכבוד! סיימת סשן 🎉 קח הפסקה ☕';
+        else updateNow();
+      }
+    },1000);
+  }
+}
+
+function resetTimer(){clearInterval(iv);running=false;rem=total;document.getElementById('start-btn').textContent='▶ התחל';updateDisplay();updateNow();}
+
+function updateGoal(){
+  const pct=Math.min(100,Math.round(sessions/cfg.goal*100));
+  document.getElementById('gdone').textContent=sessions;
+  document.getElementById('gbar').style.width=pct+'%';
+}
+
+function playSound(){
+  if(cfg.sound==='none')return;
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[cfg.sound==='bell'?880:660,.8],[cfg.sound==='bell'?660:.01,.4]].forEach(([f,d],i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type=cfg.sound==='bell'?'sine':'triangle';o.frequency.value=f;
+      const st=ctx.currentTime+i*.35;
+      g.gain.setValueAtTime(.5,st);g.gain.exponentialRampToValueAtTime(.001,st+d);
+      o.start(st);o.stop(st+d);
+    });
+  }catch(e){}
+}
+
+function celebrate(){
+  const p=ENC[Math.floor(Math.random()*ENC.length)];
+  document.getElementById('ce').textContent=p.e;
+  document.getElementById('ct').textContent=p.t;
+  document.getElementById('cm').textContent=p.m;
+  document.getElementById('cel-ov').style.display='block';
+  document.getElementById('cel-box').style.display='block';
+  launchFW();
+}
+function closeCel(){
+  ['cel-ov','cel-box','fw'].forEach(id=>{const el=document.getElementById(id);el.style.display='none';if(id==='fw')el.innerHTML='';});
+  updateNow();
+}
+function launchFW(){
+  const c=document.getElementById('fw');c.style.display='block';c.innerHTML='';
+  const cols=['#2D6BE4','#7C3AED','#10B981','#F59E0B','#EF4444','#EC4899'];
+  for(let i=0;i<80;i++){
+    const el=document.createElement('div'),sz=Math.random()*10+5;
+    el.style.cssText=`position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;width:${sz}px;height:${sz}px;border-radius:50%;background:${cols[Math.floor(Math.random()*cols.length)]};opacity:1`;
+    c.appendChild(el);
+    const a=Math.random()*2*Math.PI,d=Math.random()*250+80;
+    setTimeout(()=>{el.style.transition='transform 1.4s ease-out,opacity 1.4s ease-out';el.style.transform=`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px)`;el.style.opacity='0';},Math.random()*500);
+  }
+}
+
+function openSt(){document.getElementById('st-name').value=cfg.name;document.getElementById('st-goal').value=cfg.goal;document.getElementById('st-dur').value=cfg.dur;document.getElementById('st-sound').value=cfg.sound;document.getElementById('stpanel').style.display='block';}
+function closeSt(){document.getElementById('stpanel').style.display='none';}
+function saveSt(){
+  cfg.name=document.getElementById('st-name').value.trim()||cfg.name;
+  cfg.goal=parseInt(document.getElementById('st-goal').value)||cfg.goal;
+  cfg.dur=parseInt(document.getElementById('st-dur').value)||cfg.dur;
+  cfg.sound=document.getElementById('st-sound').value;
+  if(!running){total=cfg.dur*60;rem=total;updateDisplay();}
+  document.getElementById('uname').textContent=cfg.name;
+  document.getElementById('gtotal').textContent=cfg.goal;
+  updateGoal();closeSt();
+}
+</script>
+</body>
+</html>
